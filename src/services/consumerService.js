@@ -13,7 +13,7 @@ async function consumeMessages(topic) {
         eachMessage: async ({ topic, message }) => {
             const eventData = JSON.parse(message.value.toString());
             console.log(`Message consumed from topic "${topic}":`, eventData);
-            // await sendToAmplitude(eventData);
+            await sendToAmplitude(eventData);
         }
     });
 }

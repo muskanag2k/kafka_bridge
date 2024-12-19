@@ -1,6 +1,6 @@
 #!/bin/bash
 
-KAFKA_DIR="/Users/muskanagarwal/Downloads/kafka-3.8.1-src"
+KAFKA_DIR="/opt/kafka"
 TOPICS=("amplitude_events" "backend_events")
 
 if [ ! -d "$KAFKA_DIR" ]; then

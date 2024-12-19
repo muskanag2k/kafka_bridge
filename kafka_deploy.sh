@@ -1,7 +1,7 @@
 #!/bin/bash
 
-=APP_DIR="/opt/nodejs-kafka-app"
-NODE_APP_REPO="<YOUR_GIT_REPO_URL>"
+APP_DIR="/home/deploy/apps/kafka_bridge"
+NODE_APP_REPO="https://github.com/muskanag2k/kafka_bridge.git"
 
 echo "Cloning Node.js application..."
 sudo rm -rf $APP_DIR
@@ -16,12 +16,12 @@ echo "Installing PM2..."
 npm install -g pm2
 
 echo "Starting the Node.js Kafka application..."
-pm2 start index.js --name nodejs-kafka-app
+pm2 start app.js --name kafka-bridge
 
 echo "Application status:"
 pm2 list
 
 echo "Check logs using the following commands:"
-echo "Node.js Logs: pm2 logs nodejs-kafka-app"
+echo "Node.js Logs: pm2 logs kafka-bridge"
 
 echo "Node.js application is running successfully!"

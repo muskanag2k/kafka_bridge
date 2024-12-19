@@ -4,9 +4,6 @@ KAFKA_VERSION="3.8.1"
 SCALA_VERSION="2.13"
 KAFKA_DIR="/opt/kafka"
 
-echo "Updating the system..."
-apt update -y && apt upgrade -y
-
 echo "Installing Java..."
 apt install -y openjdk-11-jdk
 

@@ -4,12 +4,12 @@ KAFKA_VERSION="3.8.1"
 SCALA_VERSION="2.13"
 KAFKA_DIR="/opt/kafka"
 
-echo "Installing Java..."
-apt install -y openjdk-11-jdk
+# echo "Installing Java..."
+# sudo apt install openjdk-8-jdk -y
 
-echo "Installing Node.js..."
-curl -fsSL https://deb.nodesource.com/setup_18.x |  -E bash -
-apt install -y nodejs
+# echo "Installing Node.js..."
+# curl -fsSL https://deb.nodesource.com/setup_18.x |  -E bash -
+# apt install -y nodejs
 
 echo "Downloading Kafka..."
 wget https://downloads.apache.org/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz -P /tmp

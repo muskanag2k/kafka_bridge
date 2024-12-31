@@ -2,13 +2,13 @@ const { kafka, logLevel } = require('../config/kafkaConfig');
 const axios = require('axios');
 
 const consumer_1 = kafka.consumer({
-    groupId: 'amplitude-consumer-group-1',
+    groupId: process.env.CONSUMER_GROUP_1,
     sessionTimeout: 30000,  //30 secs
     logLevel: logLevel.DEBUG,
  });
 
 const consumer_2 = kafka.consumer({
-    groupId: 'amplitude-consumer-group-2',
+    groupId: process.env.CONSUMER_GROUP_2,
     sessionTimeout: 30000, // 30 secs
     logLevel: logLevel.DEBUG,
 });
@@ -23,7 +23,7 @@ async function consumeMessages(consumer, topic) {
         eachMessage: async ({ topic, partition, message }) => {
             const eventData = JSON.parse(message.value.toString());
             console.log(`Message consumed from topic "${topic}", partition "${partition}":`, eventData.event_name);
-            await sendToAmplitude(eventData);
+            // await sendToAmplitude(eventData);
         }
     });
 }
@@ -54,7 +54,7 @@ async function sendToAmplitude(eventData) {
 
 //start consumers
 async function startConsumers() {
-    const topic = 'amplitude_events';
+    const topic = process.env.TOPIC_0;
     await Promise.all([
         consumeMessages(consumer_1, topic),
         consumeMessages(consumer_2, topic),

@@ -7,7 +7,7 @@ const publishEvent = async (req, res) => {
         return res.status(400).json({ message: 'Please provide a valid batch of events' });
     }
     try {
-        const topic = `amplitude_events`;
+        const topic = process.env.TOPIC_0;
         for (const event of events) {
             validateEvent(event);
             await handlePublish(topic, event);

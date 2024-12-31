@@ -5,8 +5,8 @@ dotenv.config();
 
 app.use(express.json());
 
-const kafkaRoutes = require('./src/routes/kafkaRoutes');
-app.use('/kafka', kafkaRoutes);
+const routes = require('./src/config/routes');
+app.use('/kafka', routes);
 
 const { startConsumerJob } = require('./src/jobs/consumerJob');
 startConsumerJob();

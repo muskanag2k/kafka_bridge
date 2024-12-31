@@ -17,31 +17,11 @@ async function doesTopicExist(topicName) {
     }
 }
 
-// async function createTopic(topicName) {
-//     try {
-//         await admin.connect();
-//         await admin.createTopics({
-//             topics: [{ topic: topicName }],
-//         });
-//         console.log(`Topic "${topicName}" created successfully.`);
-//     } catch (error) {
-//         if (error.message.includes('TopicExistsException')) {
-//             console.log(`Topic "${topicName}" already exists.`);
-//         } else {
-//             console.error(`Error creating topic "${topicName}":`, error);
-//             throw new Error('Error creating Kafka topic.');
-//         }
-//     } finally {
-//         await admin.disconnect();
-//     }
-// }
-
 async function publishMessage(topic, message) {
     try {
         if (!topic) {
             throw new Error('Topic is undefined or empty');
         }
-        await producer.disconnect();
         await producer.connect();
         const result = await producer.send({
             topic,

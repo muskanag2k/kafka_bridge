@@ -2,7 +2,7 @@ const { startConsumers } = require('../services/consumerService');
 
 const startConsumerJob = async () => {
     try {
-        const topic = 'amplitude_events';
+        const topic = process.env.TOPIC_0;
         console.log(`Starting Kafka consumer for topic "${topic}"...`);
         await startConsumers(topic);
     } catch (err) {

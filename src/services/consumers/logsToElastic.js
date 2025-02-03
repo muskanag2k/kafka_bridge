@@ -26,7 +26,7 @@ async function consumeMessages(consumer, topic) {
     await consumer.run({
         eachMessage: async ({ topic, partition, message }) => {
             console.log(`Message consumed from topic "${topic}", partition "${partition}":`, message);
-            await sendToElasticsearch(eventData);
+            await sendToElasticsearch(message);
         }
     });
 }

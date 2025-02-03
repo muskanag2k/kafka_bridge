@@ -25,15 +25,15 @@ async function consumeMessages(consumer, topic) {
 
     await consumer.run({
         eachMessage: async ({ topic, partition, message }) => {
-            console.log(`Message consumed from topic "${topic}", partition "${partition}":`, message);
-            await sendToElasticsearch(message);
+            const eventData = JSON.parse(message.value.toString());
+            console.log(`Message consumed from topic "${topic}", partition "${partition}":`, eventData);
+            await sendToElasticsearch(eventData);
         }
     });
 }
 
 async function sendToElasticsearch(message) {
     const indexName = process.env.ELASTICSEARCH_INDEX;
-    // const document = JSON.parse(message.value);
 
     try {
         const response = await esClient.index({

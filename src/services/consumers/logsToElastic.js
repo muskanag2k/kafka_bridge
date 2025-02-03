@@ -5,9 +5,15 @@ const consumer_1 = kafka.consumer({
     groupId: process.env.CONSUMER_GROUP_3,
     sessionTimeout: 30000,
     logLevel: logLevel.DEBUG,
- });
+});
 
-const esClient = new Client({ node: process.env.ELASTICSEARCH_NODE });
+const esClient = new Client({
+    cloud: { id: process.env.ELASTIC_CLOUD_ID },
+    auth: {
+        username: process.env.ELASTIC_USERNAME,
+        password: process.env.ELASTIC_PASSWORD
+    }
+});
 
 async function consumeMessages(consumer, topic) {
     await consumer.connect();
@@ -28,15 +34,15 @@ async function consumeMessages(consumer, topic) {
 
 async function sendToElasticsearch(message) {
     const indexName = process.env.ELASTICSEARCH_INDEX;
-    const document = JSON.parse(message.value);
+    // const document = JSON.parse(message.value);
 
     try {
         const response = await esClient.index({
             index: indexName,
-            document,
+            document: message,
         });
 
-        console.log('Document indexed successfully in Elasticsearch:', response.body);
+        console.log('Document indexed successfully in Elasticsearch:', response);
     } catch (error) {
         console.error('Error indexing document in Elasticsearch:', error);
     }

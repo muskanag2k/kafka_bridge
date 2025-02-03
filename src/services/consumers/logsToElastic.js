@@ -1,4 +1,5 @@
 const { kafka, logLevel } = require('../../config/kafkaConfig');
+global.ReadableStream = require('stream/web').ReadableStream;
 const { Client } = require('@elastic/elasticsearch');
 
 const consumer_1 = kafka.consumer({

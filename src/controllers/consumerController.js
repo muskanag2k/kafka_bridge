@@ -1,4 +1,4 @@
-const { consumeMessages } = require('../services/consumerService');
+const { consumeMessages } = require('../services/consumers/consumerService');
 
 const consumeMessagesFromTopic = async (req, res) => {
     try {

@@ -1,4 +1,5 @@
-const { startConsumers } = require('../services/consumerService');
+const { startConsumers } = require('../services/consumers/consumerService');
+const { startLogConsumers } = require('../services/consumers/logsToElastic');
 
 const startConsumerJob = async () => {
     try {
@@ -10,4 +11,14 @@ const startConsumerJob = async () => {
     }
 };
 
-module.exports = { startConsumerJob };
+const startLogConsumerJob = async () => {
+    try {
+        const topic = process.env.TOPIC_1;
+        console.log(`Starting Kafka consumer for topic "${topic}"...`);
+        await startLogConsumers(topic);
+    } catch (err) {
+        console.error('Error starting Kafka consumer job:', err);
+    }
+};
+
+module.exports = { startConsumerJob, startLogConsumerJob };

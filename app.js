@@ -8,8 +8,14 @@ app.use(express.json());
 const routes = require('./src/config/routes');
 app.use('/kafka', routes);
 
-const { startConsumerJob } = require('./src/jobs/consumerJob');
-startConsumerJob();
+const { startConsumerJob, startLogConsumerJob } = require('./src/jobs/consumerJob');
+(async () => {
+    try {
+        await Promise.all([startConsumerJob(), startLogConsumerJob()]);
+    } catch (err) {
+        console.error('Error starting consumer jobs:', err);
+    }
+})();
 
 app.listen(process.env.PORT,function(){
     console.log("serving...");

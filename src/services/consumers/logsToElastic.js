@@ -25,9 +25,7 @@ async function consumeMessages(consumer, topic) {
 
     await consumer.run({
         eachMessage: async ({ topic, partition, message }) => {
-            const eventData = JSON.parse(message.value.toString());
-            console.log(`Message consumed from topic "${topic}", partition "${partition}":`, eventData.event_name);
-
+            console.log(`Message consumed from topic "${topic}", partition "${partition}":`, message);
             await sendToElasticsearch(eventData);
         }
     });

@@ -3,7 +3,7 @@ const { Kafka, logLevel } = require('kafkajs');
 
 const kafka = new Kafka({
     clientId: process.env.KAFKA_CLIENT_ID,
-    brokers: [process.env.BROKER_1, process.env.BROKER_1],
+    brokers: [process.env.BROKER_1, process.env.BROKER_2, process.env.BROKER_3],
     ssl: undefined,
     // ssl: {
     //     rejectUnauthorized: false, // Set to false only for debugging

@@ -1,7 +1,7 @@
 const { kafka, logLevel } = require('../../config/kafkaConfig');
 const { Client } = require('@elastic/elasticsearch');
 
-const NUM_CONSUMERS = 12;
+const NUM_CONSUMERS = 30;
 const consumers = [];
 
 const createConsumer = () => kafka.consumer({
@@ -10,7 +10,7 @@ const createConsumer = () => kafka.consumer({
     heartbeatInterval: 3000,
     maxPollIntervalMs: 30000,
     maxPartitionFetchBytes: 10 * 1024 * 1024,
-    fetchMinBytes: 1 * 1024 * 1024, 
+    fetchMinBytes: 1 * 1024 * 1024,
     logLevel: logLevel.ERROR,
 });
 
@@ -28,7 +28,7 @@ async function consumeMessages(consumer) {
     await consumer.subscribe({ topic: process.env.TOPIC_1, fromBeginning: false });
 
     await consumer.run({
-        eachMessage: async ({ topic, partition, message }) => {
+        eachMessage: async ({ partition, message }) => {
             const eventData = JSON.parse(message.value.toString());
             console.log(`Consumer processing partition ${partition}:`, eventData);
             await sendToElasticsearch(eventData);

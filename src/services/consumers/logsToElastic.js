@@ -1,11 +1,17 @@
 const { kafka, logLevel } = require('../../config/kafkaConfig');
-global.ReadableStream = require('stream/web').ReadableStream;
 const { Client } = require('@elastic/elasticsearch');
 
-const consumer_1 = kafka.consumer({
+const NUM_CONSUMERS = 12;
+const consumers = [];
+
+const createConsumer = () => kafka.consumer({
     groupId: process.env.CONSUMER_GROUP_3,
-    sessionTimeout: 30000,
-    logLevel: logLevel.DEBUG,
+    sessionTimeout: 10000,
+    heartbeatInterval: 3000,
+    maxPollIntervalMs: 30000,
+    maxPartitionFetchBytes: 10 * 1024 * 1024,
+    fetchMinBytes: 1 * 1024 * 1024, 
+    logLevel: logLevel.ERROR,
 });
 
 const esClient = new Client({
@@ -13,46 +19,40 @@ const esClient = new Client({
     auth: {
         username: process.env.ELASTIC_USERNAME,
         password: process.env.ELASTIC_PASSWORD
-    }
+    },
+    requestTimeout: 30000,
 });
 
-async function consumeMessages(consumer, topic) {
+async function consumeMessages(consumer) {
     await consumer.connect();
-    await consumer.subscribe({
-        topic,
-        fromBeginning: false
-    });
+    await consumer.subscribe({ topic: process.env.TOPIC_1, fromBeginning: false });
 
     await consumer.run({
         eachMessage: async ({ topic, partition, message }) => {
             const eventData = JSON.parse(message.value.toString());
-            console.log(`Message consumed from topic "${topic}", partition "${partition}":`, eventData);
+            console.log(`Consumer processing partition ${partition}:`, eventData);
             await sendToElasticsearch(eventData);
         }
     });
 }
 
 async function sendToElasticsearch(message) {
-    const indexName = process.env.ELASTICSEARCH_INDEX;
-
     try {
-        const response = await esClient.index({
-            index: indexName,
+        await esClient.index({
+            index: process.env.ELASTICSEARCH_INDEX,
             document: message,
         });
-
-        console.log('Document indexed successfully in Elasticsearch:', response);
     } catch (error) {
-        console.error('Error indexing document in Elasticsearch:', error);
+        console.error('Elasticsearch indexing error:', error);
     }
 }
 
 async function startLogConsumers() {
-    const topic = process.env.TOPIC_1;
-
-    await Promise.all([
-        consumeMessages(consumer_1, topic),
-    ]);
+    for (let i = 0; i < NUM_CONSUMERS; i++) {
+        const consumer = createConsumer();
+        consumers.push(consumer);
+        consumeMessages(consumer);
+    }
 }
 
 module.exports = { startLogConsumers };

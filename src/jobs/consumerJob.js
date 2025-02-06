@@ -13,7 +13,7 @@ const startConsumerJob = async () => {
 
 const startLogConsumerJob = async () => {
     try {
-        const topic = process.env.TOPIC_1;
+        const topic = process.env.TOPIC_2;
         console.log(`Starting Kafka consumer for topic "${topic}"...`);
         await startLogConsumers(topic);
     } catch (err) {

@@ -1,11 +1,12 @@
 const { kafka, logLevel } = require('../../config/kafkaConfig');
+global.ReadableStream = require('stream/web').ReadableStream;
 const { Client } = require('@elastic/elasticsearch');
 
-const NUM_CONSUMERS = 30;
+const NUM_CONSUMERS = 60;
 const consumers = [];
 
 const createConsumer = () => kafka.consumer({
-    groupId: process.env.CONSUMER_GROUP_3,
+    groupId: process.env.CONSUMER_GROUP_4,
     sessionTimeout: 10000,
     heartbeatInterval: 3000,
     maxPollIntervalMs: 30000,
@@ -25,7 +26,7 @@ const esClient = new Client({
 
 async function consumeMessages(consumer) {
     await consumer.connect();
-    await consumer.subscribe({ topic: process.env.TOPIC_1, fromBeginning: false });
+    await consumer.subscribe({ topic: process.env.TOPIC_2, fromBeginning: false });
 
     await consumer.run({
         eachMessage: async ({ partition, message }) => {

@@ -52,10 +52,10 @@ async function consumeMessages(consumer, topic, index) {
 
 async function sendToElasticsearch(message, index) {
     try {
-        // const payload = typeof message === 'object' ? message : { message };
+        const payload = typeof message === 'object' ? message : { message };
         const response = await esClient.index({
             index,
-            body: message,
+            body: payload,
         });
         console.log(`Successfully indexed document:`, response);
     } catch (error) {

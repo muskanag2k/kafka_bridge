@@ -1,6 +1,8 @@
 const { kafka, logLevel } = require('../../config/kafkaConfig');
 const { Client } = require('@elastic/elasticsearch');
+
 const { Readable } = require('stream');
+global.ReadableStream = Readable;
 
 const NUM_CONSUMERS = process.env.NUM_CONSUMERS || 60;
 const consumers = [];
@@ -35,12 +37,12 @@ async function consumeMessages(consumer, topic, index) {
 
             const eventData = JSON.parse(rawMessage);
             const logMessage = eventData.message;
-            let parsedMessage;
-            try {
-                parsedMessage = JSON.parse(logMessage);
-            } catch {
-                parsedMessage = logMessage;
-            }
+            // let parsedMessage;
+            // try {
+            //     parsedMessage = JSON.parse(logMessage);
+            // } catch {
+            let parsedMessage = logMessage;
+            // }
 
             console.log(`Consumer processing partition ${partition} for topic ${topic}:`, parsedMessage);
             await sendToElasticsearch(parsedMessage, index);
@@ -50,12 +52,12 @@ async function consumeMessages(consumer, topic, index) {
 
 async function sendToElasticsearch(message, index) {
     try {
-        const payload = typeof message === 'object' ? message : { message };
+        // const payload = typeof message === 'object' ? message : { message };
         const response = await esClient.index({
             index,
-            document: payload,
+            body: message,
         });
-        console.log(`Successfully indexed document:`, response.body);
+        console.log(`Successfully indexed document:`, response);
     } catch (error) {
         console.error(`Elasticsearch indexing error for index ${index}:`, error.meta?.body || error);
     }

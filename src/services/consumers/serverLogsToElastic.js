@@ -31,21 +31,35 @@ async function consumeMessages(consumer, topic, index) {
 
     await consumer.run({
         eachMessage: async ({ partition, message }) => {
-            const eventData = JSON.parse(message.value.toString());
-            console.log(`Consumer processing partition ${partition} for topic ${topic}:`, eventData);
-            await sendToElasticsearch(eventData, index);
+            let rawMessage = message.value.toString();
+            rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+
+            const eventData = JSON.parse(rawMessage);
+            const logMessage = eventData.message;
+            let parsedMessage;
+            try {
+                parsedMessage = JSON.parse(logMessage);
+            } catch {
+                parsedMessage = logMessage;
+            }
+
+            console.log(`Consumer processing partition ${partition} for topic ${topic}:`, parsedMessage);
+            await sendToElasticsearch(parsedMessage, index);
         }
     });
 }
 
 async function sendToElasticsearch(message, index) {
     try {
-        await esClient.index({
+        const payload = typeof message === 'object' ? message : { message };
+        const response = await esClient.index({
             index,
-            document: message,
+            body: payload,
+            headers: { 'Content-Type': 'application/json' }
         });
+        console.log(`Successfully indexed document:`, response.body);
     } catch (error) {
-        console.error(`Elasticsearch indexing error for index ${index}:`, error);
+        console.error(`Elasticsearch indexing error for index ${index}:`, error.meta?.body || error);
     }
 }
 

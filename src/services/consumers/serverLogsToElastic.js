@@ -1,7 +1,6 @@
 const { kafka, logLevel } = require('../../config/kafkaConfig');
 const { Client } = require('@elastic/elasticsearch');
-
-global.ReadableStream = require('stream/web').ReadableStream;
+const { Readable } = require('stream');
 
 const NUM_CONSUMERS = process.env.NUM_CONSUMERS || 60;
 const consumers = [];
@@ -54,8 +53,7 @@ async function sendToElasticsearch(message, index) {
         const payload = typeof message === 'object' ? message : { message };
         const response = await esClient.index({
             index,
-            body: payload,
-            headers: { 'Content-Type': 'application/json' }
+            document: payload,
         });
         console.log(`Successfully indexed document:`, response.body);
     } catch (error) {

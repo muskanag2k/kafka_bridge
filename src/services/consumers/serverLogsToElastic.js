@@ -61,18 +61,18 @@ async function consumeMessages(consumer, topic, index) {
     await consumer.run({
         eachMessage: async ({ partition, message }) => {
             try {
-                console.log(`original message - ${message}`)
                 let rawMessage = message.value.toString();
-                rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+                // rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
                 const eventData = JSON.parse(rawMessage);
 
                 let parsedMessage;
                 try {
-                    parsedMessage = JSON.parse(eventData.message);
-                    console.log(`parsed message - ${parsedMessage}`)
+                    let cleanedMessage = eventData.message.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+                    parsedMessage = JSON.parse(cleanedMessage);
+                    console.log(`Parsed message:`, parsedMessage);
                 } catch (error) {
                     parsedMessage = { message: eventData.message };
-                    console.log(`error parsed message - ${parsedMessage}`)
+                    console.log(`Error parsing message, using fallback:`, parsedMessage);
                 }
                 const logMessage = { ...eventData, ...parsedMessage };
                 const elastic_index = getWeeklyIndexName(index, eventData.host);

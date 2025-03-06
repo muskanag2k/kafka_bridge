@@ -69,7 +69,7 @@ async function consumeMessages(consumer, topic, index) {
                 try {
                     parsedMessage = JSON.parse(rawMessage);
                     console.log("Parsed Message:", parsedMessage);
-                    jsonmessage = JSON.parse(parsedMessage.message)
+                    jsonmessage = JSON.parse(parsedMessage['message']);
                     console.log("JSON parsed message:", jsonmessage);
                 } catch (error) {
                     parsedMessage = rawMessage;
@@ -78,9 +78,9 @@ async function consumeMessages(consumer, topic, index) {
 
                 const logMessage = { ...parsedMessage, ...jsonmessage };
                 const elastic_index = getWeeklyIndexName(index, parsedMessage.host || "unknown");
-
+                console.log("index is:", elastic_index)
                 console.log(`Consumer processing partition ${partition} for topic '${topic}':`, logMessage);
-                await sendToElasticsearch(logMessage, elastic_index);
+                // await sendToElasticsearch(logMessage, elastic_index);
             } catch (error) {
                 console.error(`Error processing Kafka message:`, error);
             }

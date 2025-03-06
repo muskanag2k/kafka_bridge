@@ -1,5 +1,6 @@
 const { kafka, logLevel } = require('../../config/kafkaConfig');
 const { Client } = require('@elastic/elasticsearch');
+const stripAnsi = require('strip-ansi');
 const moment = require('moment');
 
 const { Readable } = require('stream');
@@ -17,7 +18,7 @@ const consumers = [];
 
 const createConsumer = (groupId) => kafka.consumer({
     groupId,
-    sessionTimeout: 10000,
+    sessionTimeout: 30000,
     heartbeatInterval: 3000,
     maxPollIntervalMs: 30000,
     maxPartitionFetchBytes: 10 * 1024 * 1024,
@@ -34,26 +35,6 @@ const esClient = new Client({
     requestTimeout: 30000,
 });
 
-// async function consumeMessages(consumer, topic, index) {
-//     await consumer.connect();
-//     await consumer.subscribe({ topic, fromBeginning: false });
-
-//     await consumer.run({
-//         eachMessage: async ({ partition, message }) => {
-//             let rawMessage = message.value.toString();
-//             rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
-
-//             const eventData = JSON.parse(rawMessage);
-//             const logMessage = eventData.message;
-
-//             const elastic_index = getWeeklyIndexName(index, eventData.host);
-
-//             console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
-//             await sendToElasticsearch(logMessage, elastic_index);
-//         }
-//     });
-// }
-
 async function consumeMessages(consumer, topic, index) {
     await consumer.connect();
     await consumer.subscribe({ topic, fromBeginning: false });
@@ -62,8 +43,13 @@ async function consumeMessages(consumer, topic, index) {
         eachMessage: async ({ partition, message }) => {
             try {
                 let rawMessage = message.value.toString();
-                rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
-                const eventData = JSON.parse(rawMessage);
+                const msg1 = stripAnsi(message);
+                const msg2 = stripAnsi(rawMessage);
+                // rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+                const eventData = JSON.parse(msg2);
+                console.log("message 1:", msg1);
+                console.log("message 2:", msg2);
+                console.log("json parsed:", eventData);
 
                 let parsedMessage;
                 try {
@@ -73,10 +59,11 @@ async function consumeMessages(consumer, topic, index) {
                 } catch (error) {
                     parsedMessage = { message: eventData.message };
                 }
+                console.log("parsed message:", parsedMessage);
                 const logMessage = { ...eventData, ...parsedMessage };
                 const elastic_index = getWeeklyIndexName(index, eventData.host);
                 console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
-                await sendToElasticsearch(logMessage, elastic_index);
+                // await sendToElasticsearch(logMessage, elastic_index);
             } catch (error) {
                 console.error(`Error processing Kafka message:`, error);
             }

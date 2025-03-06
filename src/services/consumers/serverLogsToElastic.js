@@ -1,6 +1,5 @@
 const { kafka, logLevel } = require('../../config/kafkaConfig');
 const { Client } = require('@elastic/elasticsearch');
-const stripAnsi = require('strip-ansi');
 const moment = require('moment');
 
 const { Readable } = require('stream');
@@ -43,15 +42,9 @@ async function consumeMessages(consumer, topic, index) {
         eachMessage: async ({ partition, message }) => {
             try {
                 let rawMessage = message.value.toString();
-                let msg1, msg2;
-                (async () => {
-                    const { default: stripAnsi } = await import('strip-ansi');
-
-                    msg1 = stripAnsi(message);
-                    msg2 = stripAnsi(rawMessage);
-
-                    console.log(cleanMessage);
-                })();
+                const { default: stripAnsi } = await import('strip-ansi');
+                let msg1 = stripAnsi(message);
+                let msg2 = stripAnsi(rawMessage);
 
                 // rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
                 const eventData = JSON.parse(msg2);

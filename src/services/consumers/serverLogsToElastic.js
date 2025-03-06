@@ -1,6 +1,5 @@
 const { kafka, logLevel } = require('../../config/kafkaConfig');
 const { Client } = require('@elastic/elasticsearch');
-const { json } = require('body-parser');
 const moment = require('moment');
 
 const { Readable } = require('stream');
@@ -63,30 +62,26 @@ async function consumeMessages(consumer, topic, index) {
         eachMessage: async ({ partition, message }) => {
             try {
                 let rawMessage = message.value.toString();
-
+                rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+                const eventData = JSON.parse(rawMessage);
+                console.log("event data is:", eventData)
                 let parsedMessage;
-                let jsonmessage;
                 try {
-                    parsedMessage = JSON.parse(rawMessage);
-                    console.log("Parsed Message:", parsedMessage);
-                    jsonmessage = JSON.parse(parsedMessage['message']);
-                    console.log("JSON parsed message:", jsonmessage);
+                    parsedMessage = JSON.parse(eventData.message);
                 } catch (error) {
-                    parsedMessage = rawMessage;
-                    console.error("Error parsing JSON:", error);
+                    parsedMessage = { message: eventData.message };
                 }
-
-                const logMessage = { ...parsedMessage, ...jsonmessage };
-                const elastic_index = getWeeklyIndexName(index, parsedMessage.host || "unknown");
-                console.log("index is:", elastic_index)
-                console.log(`Consumer processing partition ${partition} for topic '${topic}':`, logMessage);
-                // await sendToElasticsearch(logMessage, elastic_index);
+                const logMessage = { ...eventData, ...parsedMessage };
+                const elastic_index = getWeeklyIndexName(index, eventData.host);
+                console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
+                await sendToElasticsearch(logMessage, elastic_index);
             } catch (error) {
                 console.error(`Error processing Kafka message:`, error);
             }
         }
     });
 }
+
 
 async function sendToElasticsearch(message, index) {
     try {

@@ -57,7 +57,7 @@ async function consumeMessages(consumer, topic, index) {
                 const logMessage = { ...eventData, ...parsedMessage };
                 const elastic_index = getWeeklyIndexName(index, eventData.host);
                 console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
-                await sendToElasticsearch(logMessage, elastic_index);
+                await sendToElasticsearch(parsedMessage, elastic_index);
             } catch (error) {
                 console.error(`Error processing Kafka message:`, error);
             }

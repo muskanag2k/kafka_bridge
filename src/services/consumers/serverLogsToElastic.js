@@ -77,15 +77,16 @@ async function consumeMessages(consumer, topic, index) {
                 let rawMessage = message.value.toString();
                 rawMessage = stripAnsi(rawMessage);
                 let eventData = isValidJson(rawMessage) ? JSON.parse(rawMessage) : { message: rawMessage };
-                const jsonString = `{${cleanMessage}}`;
+                const jsonString = `{${rawMessage}}`;
                 console.log(`json string: `, jsonString)
                 let parsedMessage;
-                if (isValidJson(eventData.message)) {
-                    parsedMessage = JSON.parse(eventData.message);
-                    console.log(`Parsed JSON message:`, parsedMessage);
-                } else {
-                    parsedMessage = { message: eventData.message };
-                    console.log(`Message is not JSON. Using raw message:`, parsedMessage);
+                try {
+                    parsedMessage = JSON.parse(jsonString);
+                    console.log(parsed);
+                    console.log("Message:", parsed.message);
+                } catch (error) {
+                    parsedMessage = rawMessage.message;
+                    console.error("Error parsing JSON:", error);
                 }
 
                 const logMessage = { ...eventData, ...parsedMessage };

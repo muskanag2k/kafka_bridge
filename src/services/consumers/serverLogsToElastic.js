@@ -18,7 +18,7 @@ const consumers = [];
 const createConsumer = (groupId) => kafka.consumer({
     groupId,
     sessionTimeout: 30000,
-    heartbeatInterval: 3000,
+    heartbeatInterval: 15000,
     maxPollIntervalMs: 30000,
     maxPartitionFetchBytes: 10 * 1024 * 1024,
     fetchMinBytes: 1 * 1024 * 1024,
@@ -68,7 +68,7 @@ async function consumeMessages(consumer, topic, index) {
 
 async function sendToElasticsearch(message, index) {
     try {
-        const payload = typeof message === 'object' ? message : { message };
+        const payload = typeof message === 'object' ? { message: JSON.stringify(message) } : { message };
         const response = await esClient.index({
             index,
             body: payload,

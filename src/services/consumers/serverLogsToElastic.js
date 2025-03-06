@@ -1,5 +1,6 @@
 const { kafka, logLevel } = require('../../config/kafkaConfig');
 const { Client } = require('@elastic/elasticsearch');
+const { json } = require('body-parser');
 const moment = require('moment');
 
 const { Readable } = require('stream');
@@ -75,9 +76,9 @@ async function consumeMessages(consumer, topic, index) {
             try {
                 let rawMessage = message.value.toString();
                 rawMessage = stripAnsi(rawMessage);
-                console.log(`original message: `, rawMessage)
                 let eventData = isValidJson(rawMessage) ? JSON.parse(rawMessage) : { message: rawMessage };
-
+                const jsonString = `{${cleanMessage}}`;
+                console.log(`json string: `, jsonString)
                 let parsedMessage;
                 if (isValidJson(eventData.message)) {
                     parsedMessage = JSON.parse(eventData.message);

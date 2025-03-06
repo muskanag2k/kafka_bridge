@@ -64,10 +64,12 @@ async function consumeMessages(consumer, topic, index) {
                 let rawMessage = message.value.toString();
                 rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
                 const eventData = JSON.parse(rawMessage);
-                console.log("event data is:", eventData)
+
                 let parsedMessage;
                 try {
-                    parsedMessage = JSON.parse(eventData.message);
+                    let message = eventData.message;
+                    message = message.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+                    parsedMessage = JSON.parse(message);
                 } catch (error) {
                     parsedMessage = { message: eventData.message };
                 }

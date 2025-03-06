@@ -54,6 +54,18 @@ const esClient = new Client({
 //     });
 // }
 
+const isValidJson = (str) => {
+    if (typeof str !== "string") return false;
+    try {
+        const parsed = JSON.parse(str);
+        return typeof parsed === "object";
+    } catch (e) {
+        return false;
+    }
+};
+
+const stripAnsi = (str) => str.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "").trim();
+
 async function consumeMessages(consumer, topic, index) {
     await consumer.connect();
     await consumer.subscribe({ topic, fromBeginning: false });
@@ -62,36 +74,23 @@ async function consumeMessages(consumer, topic, index) {
         eachMessage: async ({ partition, message }) => {
             try {
                 let rawMessage = message.value.toString();
-                rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
-                const eventData = JSON.parse(rawMessage);
+                rawMessage = stripAnsi(rawMessage);
+                console.log(`original message: `, rawMessage)
+                let eventData = isValidJson(rawMessage) ? JSON.parse(rawMessage) : { message: rawMessage };
 
                 let parsedMessage;
-                const isValidJson = (str) => {
-                    try {
-                        JSON.parse(str);
-                        return true;
-                    } catch (e) {
-                        return false;
-                    }
-                };
-                const stripAnsi = (str) => str.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "").trim();
-                try {
-                    let cleanedMessage = stripAnsi(eventData.message);
-                    if (isValidJson(cleanedMessage)) {
-                        parsedMessage = JSON.parse(cleanedMessage);
-                        console.log(`Parsed message:`, parsedMessage);
-                    } else {
-                        parsedMessage = { message: cleanedMessage };
-                        console.log(`Message is not JSON. Using raw message:`, parsedMessage);
-                    }
-                } catch (error) {
-                    console.error(`Unexpected error processing message:`, error);
-                    parsedMessage = { message: stripAnsi(eventData.message) };
+                if (isValidJson(eventData.message)) {
+                    parsedMessage = JSON.parse(eventData.message);
+                    console.log(`Parsed JSON message:`, parsedMessage);
+                } else {
+                    parsedMessage = { message: eventData.message };
+                    console.log(`Message is not JSON. Using raw message:`, parsedMessage);
                 }
 
                 const logMessage = { ...eventData, ...parsedMessage };
-                const elastic_index = getWeeklyIndexName(index, eventData.host);
-                console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
+                const elastic_index = getWeeklyIndexName(index, eventData.host || "unknown");
+
+                console.log(`Consumer processing partition ${partition} for topic '${topic}':`, logMessage);
                 await sendToElasticsearch(logMessage, elastic_index);
             } catch (error) {
                 console.error(`Error processing Kafka message:`, error);
@@ -99,7 +98,6 @@ async function consumeMessages(consumer, topic, index) {
         }
     });
 }
-
 
 async function sendToElasticsearch(message, index) {
     try {

@@ -62,17 +62,19 @@ async function consumeMessages(consumer, topic, index) {
         eachMessage: async ({ partition, message }) => {
             try {
                 let rawMessage = message.value.toString();
-                // rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+                rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
                 const eventData = JSON.parse(rawMessage);
 
                 let parsedMessage;
+                const stripAnsi = (str) => str.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "").trim();
                 try {
-                    let cleanedMessage = eventData.message.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+                    let cleanedMessage = stripAnsi(eventData.message);
                     parsedMessage = JSON.parse(cleanedMessage);
                     console.log(`Parsed message:`, parsedMessage);
                 } catch (error) {
-                    parsedMessage = { message: eventData.message };
-                    console.log(`Error parsing message, using fallback:`, parsedMessage);
+                    console.error(`Failed to parse JSON message. Falling back to raw message.`);
+                    parsedMessage = { message: stripAnsi(eventData.message) };
+                    console.log(`Fallback message:`, parsedMessage);
                 }
                 const logMessage = { ...eventData, ...parsedMessage };
                 const elastic_index = getWeeklyIndexName(index, eventData.host);

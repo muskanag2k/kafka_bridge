@@ -43,28 +43,21 @@ async function consumeMessages(consumer, topic, index) {
             try {
                 let rawMessage = message.value.toString();
                 const { default: stripAnsi } = await import('strip-ansi');
-                let msg1 = stripAnsi(message);
-                let msg2 = stripAnsi(rawMessage);
-
-                // rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
-                const eventData = JSON.parse(msg2);
-                console.log("message 1:", msg1);
-                console.log("message 2:", msg2);
-                console.log("json parsed:", eventData);
+                let ansi_parsed = stripAnsi(rawMessage);
+                const eventData = JSON.parse(ansi_parsed);
 
                 let parsedMessage;
                 try {
-                    let message = eventData.message;
-                    message = message.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+                    let message = stripAnsi(eventData.message);
                     parsedMessage = JSON.parse(message);
                 } catch (error) {
                     parsedMessage = { message: eventData.message };
                 }
-                console.log("parsed message:", parsedMessage);
+
                 const logMessage = { ...eventData, ...parsedMessage };
                 const elastic_index = getWeeklyIndexName(index, eventData.host);
                 console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
-                // await sendToElasticsearch(logMessage, elastic_index);
+                await sendToElasticsearch(logMessage, elastic_index);
             } catch (error) {
                 console.error(`Error processing Kafka message:`, error);
             }

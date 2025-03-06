@@ -55,18 +55,6 @@ const esClient = new Client({
 //     });
 // }
 
-const isValidJson = (str) => {
-    if (typeof str !== "string") return false;
-    try {
-        const parsed = JSON.parse(str);
-        return typeof parsed === "object";
-    } catch (e) {
-        return false;
-    }
-};
-
-const stripAnsi = (str) => str.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "").trim();
-
 async function consumeMessages(consumer, topic, index) {
     await consumer.connect();
     await consumer.subscribe({ topic, fromBeginning: false });
@@ -75,17 +63,13 @@ async function consumeMessages(consumer, topic, index) {
         eachMessage: async ({ partition, message }) => {
             try {
                 let rawMessage = message.value.toString();
-                rawMessage = stripAnsi(rawMessage);
-                let eventData = isValidJson(rawMessage) ? JSON.parse(rawMessage) : { message: rawMessage };
-                const jsonString = `{${rawMessage}}`;
-                console.log(`json string: `, jsonString)
+
                 let parsedMessage;
                 try {
-                    parsedMessage = JSON.parse(jsonString);
-                    console.log(parsed);
-                    console.log("Message:", parsed.message);
+                    parsedMessage = JSON.parse(rawMessage);
+                    console.log("Parsed Message:", parsedMessage);
                 } catch (error) {
-                    parsedMessage = rawMessage.message;
+                    parsedMessage = rawMessage;
                     console.error("Error parsing JSON:", error);
                 }
 

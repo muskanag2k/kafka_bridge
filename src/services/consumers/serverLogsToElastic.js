@@ -66,16 +66,29 @@ async function consumeMessages(consumer, topic, index) {
                 const eventData = JSON.parse(rawMessage);
 
                 let parsedMessage;
+                const isValidJson = (str) => {
+                    try {
+                        JSON.parse(str);
+                        return true;
+                    } catch (e) {
+                        return false;
+                    }
+                };
                 const stripAnsi = (str) => str.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "").trim();
                 try {
                     let cleanedMessage = stripAnsi(eventData.message);
-                    parsedMessage = JSON.parse(cleanedMessage);
-                    console.log(`Parsed message:`, parsedMessage);
+                    if (isValidJson(cleanedMessage)) {
+                        parsedMessage = JSON.parse(cleanedMessage);
+                        console.log(`Parsed message:`, parsedMessage);
+                    } else {
+                        parsedMessage = { message: cleanedMessage };
+                        console.log(`Message is not JSON. Using raw message:`, parsedMessage);
+                    }
                 } catch (error) {
-                    console.error(`Failed to parse JSON message. Falling back to raw message.`);
+                    console.error(`Unexpected error processing message:`, error);
                     parsedMessage = { message: stripAnsi(eventData.message) };
-                    console.log(`Fallback message:`, parsedMessage);
                 }
+
                 const logMessage = { ...eventData, ...parsedMessage };
                 const elastic_index = getWeeklyIndexName(index, eventData.host);
                 console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);

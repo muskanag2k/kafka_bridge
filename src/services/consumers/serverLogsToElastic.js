@@ -34,25 +34,54 @@ const esClient = new Client({
     requestTimeout: 30000,
 });
 
+// async function consumeMessages(consumer, topic, index) {
+//     await consumer.connect();
+//     await consumer.subscribe({ topic, fromBeginning: false });
+
+//     await consumer.run({
+//         eachMessage: async ({ partition, message }) => {
+//             let rawMessage = message.value.toString();
+//             rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+
+//             const eventData = JSON.parse(rawMessage);
+//             const logMessage = eventData.message;
+
+//             const elastic_index = getWeeklyIndexName(index, eventData.host);
+
+//             console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
+//             await sendToElasticsearch(logMessage, elastic_index);
+//         }
+//     });
+// }
+
 async function consumeMessages(consumer, topic, index) {
     await consumer.connect();
     await consumer.subscribe({ topic, fromBeginning: false });
 
     await consumer.run({
         eachMessage: async ({ partition, message }) => {
-            let rawMessage = message.value.toString();
-            rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+            try {
+                let rawMessage = message.value.toString();
+                rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+                const eventData = JSON.parse(rawMessage);
 
-            const eventData = JSON.parse(rawMessage);
-            const logMessage = eventData.message;
-
-            const elastic_index = getWeeklyIndexName(index, eventData.host);
-
-            console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
-            await sendToElasticsearch(logMessage, elastic_index);
+                let parsedMessage;
+                try {
+                    parsedMessage = JSON.parse(eventData.message);
+                } catch (error) {
+                    parsedMessage = { message: eventData.message };
+                }
+                const logMessage = { ...eventData, ...parsedMessage };
+                const elastic_index = getWeeklyIndexName(index, eventData.host);
+                console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
+                await sendToElasticsearch(logMessage, elastic_index);
+            } catch (error) {
+                console.error(`Error processing Kafka message:`, error);
+            }
         }
     });
 }
+
 
 async function sendToElasticsearch(message, index) {
     try {

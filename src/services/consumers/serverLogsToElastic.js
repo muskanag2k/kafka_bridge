@@ -65,16 +65,19 @@ async function consumeMessages(consumer, topic, index) {
                 let rawMessage = message.value.toString();
 
                 let parsedMessage;
+                let jsonmessage;
                 try {
                     parsedMessage = JSON.parse(rawMessage);
                     console.log("Parsed Message:", parsedMessage);
+                    jsonmessage = JSON.parse(parsedMessage.message)
+                    console.log("JSON parsed message:", jsonmessage);
                 } catch (error) {
                     parsedMessage = rawMessage;
                     console.error("Error parsing JSON:", error);
                 }
 
-                const logMessage = { ...eventData, ...parsedMessage };
-                const elastic_index = getWeeklyIndexName(index, eventData.host || "unknown");
+                const logMessage = { ...parsedMessage, ...jsonmessage };
+                const elastic_index = getWeeklyIndexName(index, parsedMessage.host || "unknown");
 
                 console.log(`Consumer processing partition ${partition} for topic '${topic}':`, logMessage);
                 await sendToElasticsearch(logMessage, elastic_index);

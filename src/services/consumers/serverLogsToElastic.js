@@ -43,8 +43,16 @@ async function consumeMessages(consumer, topic, index) {
         eachMessage: async ({ partition, message }) => {
             try {
                 let rawMessage = message.value.toString();
-                const msg1 = stripAnsi(message);
-                const msg2 = stripAnsi(rawMessage);
+                let msg1, msg2;
+                (async () => {
+                    const { default: stripAnsi } = await import('strip-ansi');
+
+                    msg1 = stripAnsi(message);
+                    msg2 = stripAnsi(rawMessage);
+
+                    console.log(cleanMessage);
+                })();
+
                 // rawMessage = rawMessage.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
                 const eventData = JSON.parse(msg2);
                 console.log("message 1:", msg1);

@@ -1,26 +1,4 @@
-// const { startConsumers } = require('../services/consumers/consumerService');
-// const { startLogConsumers } = require('../services/consumers/faLogsToElastic');
 const { startConsumers } = require('../services/consumers/serverLogsToElastic');
-
-// const startConsumerJob = async () => {
-//     try {
-//         const topic = process.env.TOPIC_0;
-//         console.log(`Starting Kafka consumer for topic "${topic}"...`);
-//         await startConsumers(topic);
-//     } catch (err) {
-//         console.error('Error starting Kafka consumer job:', err);
-//     }
-// };
-
-// const startLogConsumerJob = async () => {
-//     try {
-//         const topic = process.env.TOPIC_2;
-//         console.log(`Starting Kafka consumer for topic "${topic}"...`);
-//         await startLogConsumers(topic);
-//     } catch (err) {
-//         console.error('Error starting Kafka consumer job:', err);
-//     }
-// };
 
 const startLogConsumerJob = async () => {
     try {

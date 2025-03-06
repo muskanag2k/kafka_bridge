@@ -12,7 +12,7 @@ const getWeeklyIndexName = (baseIndex, host) => {
     return `${baseIndex}_${sanitizedHost}_${year}_week_${week}`;
 };
 
-const NUM_CONSUMERS = process.env.NUM_CONSUMERS || 60;
+const NUM_CONSUMERS = process.env.NUM_CONSUMERS || 50;
 const consumers = [];
 
 const createConsumer = (groupId) => kafka.consumer({
@@ -48,21 +48,16 @@ async function consumeMessages(consumer, topic, index) {
 
                 let parsedMessage;
                 try {
-                    if (eventData.message) {
-                        let innerMessage = stripAnsi(eventData.message);
-                        parsedMessage = JSON.parse(innerMessage);
-                    } else {
-                        parsedMessage = {};
-                    }
+                    let message = stripAnsi(eventData.message);
+                    parsedMessage = JSON.parse(message);
                 } catch (error) {
-                    console.error("Error parsing inner JSON:", error);
                     parsedMessage = { message: eventData.message };
                 }
 
                 const logMessage = { ...eventData, ...parsedMessage };
                 const elastic_index = getWeeklyIndexName(index, eventData.host);
                 console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
-                await sendToElasticsearch(logMessage, elastic_index);
+                await sendToElasticsearch(parsedMessage, elastic_index);
             } catch (error) {
                 console.error(`Error processing Kafka message:`, error);
             }

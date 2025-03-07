@@ -68,10 +68,12 @@ async function consumeMessages(consumer, topic, index) {
 
 async function sendToElasticsearch(message, index) {
     try {
-        const payload = typeof message === 'object' ? message : { message };
+        if (typeof message.message === 'object') {
+            message.message = JSON.stringify(message.message);
+        }
         const response = await esClient.index({
             index,
-            body: payload,
+            body: message,
         });
         console.log(`Successfully indexed document:`, response);
     } catch (error) {

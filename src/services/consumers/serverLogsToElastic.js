@@ -54,10 +54,7 @@ async function consumeMessages(consumer, topic, index) {
                     parsedMessage = { message: eventData.message };
                 }
 
-                const logMessage = {
-                    ...eventData,
-                    ...(typeof parsedMessage === 'object' ? parsedMessage : { message: parsedMessage })
-                };
+                const logMessage = { ...eventData, ...parsedMessage };
                 const elastic_index = getWeeklyIndexName(index, eventData.host);
                 console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
                 await sendToElasticsearch(logMessage, elastic_index);
@@ -70,8 +67,7 @@ async function consumeMessages(consumer, topic, index) {
 
 async function sendToElasticsearch(message, index) {
     try {
-        const payload = typeof message === 'object' ? message : JSON.parse(message);
-        console.log("payload is:", payload)
+        const payload = typeof message === 'object' ? { message: JSON.stringify(message) } : { message };
         const response = await esClient.index({
             index,
             body: payload,

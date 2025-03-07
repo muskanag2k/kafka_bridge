@@ -65,7 +65,6 @@ async function consumeMessages(consumer, topic, index) {
     });
 }
 
-
 async function sendToElasticsearch(message, index) {
     try {
         const payload = typeof message === 'object' ? { message: JSON.stringify(message) } : { message };

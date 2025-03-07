@@ -2,7 +2,7 @@ const { startConsumers } = require('../services/consumers/serverLogsToElastic');
 
 const startLogConsumerJob = async () => {
     try {
-        await startConsumers(process.env.TOPIC_2, process.env.ELASTICSEARCH_INDEX_1, process.env.CONSUMER_GROUP_4);
+        await startConsumers(process.env.TOPIC_2, process.env.ELASTICSEARCH_INDEX_1, process.env.CONSUMER_GROUP_2);
     } catch (err) {
         console.error('Error starting log consumer job:', err);
     }

@@ -5,14 +5,12 @@ const moment = require('moment');
 const { Readable } = require('stream');
 global.ReadableStream = Readable;
 
-const getWeeklyIndexName = (baseIndex, host) => {
+const getWeeklyIndexName = (baseIndex) => {
     const year = moment().year();
     const week = moment().isoWeek();
-    const sanitizedHost = host.replace(/\W+/g, '_');
-    return `${baseIndex}_${sanitizedHost}_${year}_week_${week}`;
+    return `${baseIndex}_${year}_week_${week}`;
 };
 
-const NUM_CONSUMERS = process.env.NUM_CONSUMERS || 50;
 const consumers = [];
 
 const createConsumer = (groupId) => kafka.consumer({
@@ -55,7 +53,7 @@ async function consumeMessages(consumer, topic, index) {
                 }
 
                 const logMessage = { ...eventData, ...parsedMessage };
-                const elastic_index = getWeeklyIndexName(index, eventData.host);
+                const elastic_index = getWeeklyIndexName(index);
                 console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
                 await sendToElasticsearch(logMessage, elastic_index);
             } catch (error) {
@@ -64,7 +62,6 @@ async function consumeMessages(consumer, topic, index) {
         }
     });
 }
-
 
 async function sendToElasticsearch(message, index) {
     try {
@@ -81,8 +78,8 @@ async function sendToElasticsearch(message, index) {
     }
 }
 
-async function startConsumers(topic, index, groupId) {
-    for (let i = 0; i < NUM_CONSUMERS; i++) {
+async function startConsumers(topic, index, groupId, consumers_in_group) {
+    for (let i = 0; i < consumers_in_group; i++) {
         const consumer = createConsumer(groupId);
         consumers.push(consumer);
         await consumeMessages(consumer, topic, index);

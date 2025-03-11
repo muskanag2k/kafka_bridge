@@ -23,14 +23,18 @@ const createConsumer = (groupId) => kafka.consumer({
     logLevel: logLevel.ERROR,
 });
 
-const esClient = new Client({
-    cloud: { id: process.env.ELASTIC_CLOUD_ID },
-    auth: {
-        username: process.env.ELASTIC_USERNAME,
-        password: process.env.ELASTIC_PASSWORD,
-    },
-    requestTimeout: 30000,
-});
+const createElasticsearchClient = (topic) => {
+    const cloudId = topic === 'fa_prod_logs' ? process.env.CLONED_ELASTIC_CLOUD_ID : process.env.ELASTIC_CLOUD_ID;
+
+    return new Client({
+        cloud: { id: cloudId },
+        auth: {
+            username: process.env.ELASTIC_USERNAME,
+            password: process.env.ELASTIC_PASSWORD,
+        },
+        requestTimeout: 30000,
+    });
+};
 
 async function consumeMessages(consumer, topic, index) {
     await consumer.connect();
@@ -55,7 +59,7 @@ async function consumeMessages(consumer, topic, index) {
                 const logMessage = { ...eventData, ...parsedMessage };
                 const elastic_index = getWeeklyIndexName(index);
                 console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
-                await sendToElasticsearch(logMessage, elastic_index);
+                await sendToElasticsearch(logMessage, elastic_index, topic);
             } catch (error) {
                 console.error(`Error processing Kafka message:`, error);
             }
@@ -63,11 +67,13 @@ async function consumeMessages(consumer, topic, index) {
     });
 }
 
-async function sendToElasticsearch(message, index) {
+async function sendToElasticsearch(message, index, topic) {
     try {
         if (typeof message.message === 'object') {
             message.message = JSON.stringify(message.message);
         }
+
+        const esClient = createElasticsearchClient(topic);
         const response = await esClient.index({
             index,
             body: message,

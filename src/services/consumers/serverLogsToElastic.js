@@ -12,14 +12,18 @@ const getWeeklyIndexName = (baseIndex) => {
 };
 
 const consumers = [];
+const BULK_SIZE = 1000;
+const FLUSH_INTERVAL = 30000; // Flush every 30 seconds
+const queue = [];
+let lastFlushTime = Date.now();
 
 const createConsumer = (groupId) => kafka.consumer({
     groupId,
     sessionTimeout: 50000,
     heartbeatInterval: 20000,
     maxPollIntervalMs: 30000,
-    maxPartitionFetchBytes: 10 * 1024 * 1024,
-    fetchMinBytes: 1 * 1024 * 1024,
+    maxPartitionFetchBytes: 5 * 1024 * 1024,
+    fetchMinBytes: 256 * 1024,
     logLevel: logLevel.ERROR,
 });
 
@@ -35,6 +39,16 @@ const createElasticsearchClient = (topic) => {
         requestTimeout: 30000,
     });
 };
+
+async function processQueue(log, index, topic) {
+    queue.push({ index: { _index: index } }, log);
+    currentTopic = topic
+
+    const now = Date.now();
+    if (queue.length >= BULK_SIZE * 2 || now - lastFlushTime >= FLUSH_INTERVAL) {
+        await flushLogs(topic);
+    }
+}
 
 async function consumeMessages(consumer, topic, index) {
     await consumer.connect();
@@ -59,7 +73,8 @@ async function consumeMessages(consumer, topic, index) {
                 const logMessage = { ...eventData, ...parsedMessage };
                 const elastic_index = getWeeklyIndexName(index);
                 console.log(`Consumer processing partition ${partition} for topic ${topic}:`, logMessage);
-                await sendToElasticsearch(logMessage, elastic_index, topic);
+                // await sendToElasticsearch(logMessage, elastic_index, topic);
+                await processQueue(logMessage, elastic_index, topic);
             } catch (error) {
                 console.error(`Error processing Kafka message:`, error);
             }
@@ -67,20 +82,24 @@ async function consumeMessages(consumer, topic, index) {
     });
 }
 
-async function sendToElasticsearch(message, index, topic) {
-    try {
-        if (typeof message.message === 'object') {
-            message.message = JSON.stringify(message.message);
-        }
+async function flushLogs(topic) {
+    if (queue.length === 0) return;
 
-        const esClient = createElasticsearchClient(topic);
-        const response = await esClient.index({
-            index,
-            body: message,
-        });
-        console.log(`Successfully indexed document:`, response);
+    const esClient = createElasticsearchClient(topic);
+    const bulkBody = queue.splice(0);
+    lastFlushTime = Date.now();
+
+    try {
+        const response = await esClient.bulk({ body: bulkBody });
+
+        if (response.errors) {
+            console.error("Elasticsearch bulk indexing errors:", response.items);
+        } else {
+            console.log(`Successfully indexed ${bulkBody.length / 2} documents.`);
+        }
     } catch (error) {
-        console.error(`Elasticsearch indexing error for index ${index}:`, error.meta?.body || error);
+        console.error("Bulk indexing error:", error.meta?.body || error);
+        // queue.unshift(...bulkBody);
     }
 }
 

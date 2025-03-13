@@ -8,10 +8,10 @@ app.use(express.json());
 const routes = require('./src/config/routes');
 app.use('/kafka', routes);
 
-const { startFALogConsumerJob, startSseLogConsumerJob } = require('./src/jobs/consumerJob');
+const { startFALogConsumerJob, startOpsLogConsumerJob, startSseLogConsumerJob } = require('./src/jobs/consumerJob');
 (async () => {
     try {
-        await Promise.all([startFALogConsumerJob(), startSseLogConsumerJob()]);
+        await Promise.all([startFALogConsumerJob(), startOpsLogConsumerJob(), startSseLogConsumerJob()]);
     } catch (err) {
         console.error('Error starting consumer jobs:', err);
     }

@@ -8,6 +8,14 @@ const startFALogConsumerJob = async () => {
     }
 };
 
+const startOpsLogConsumerJob = async () => {
+    try {
+        await startConsumers(process.env.TOPIC_7, process.env.ELASTICSEARCH_INDEX_6, process.env.CONSUMER_GROUP_7, process.env.CONSUMERS_3);
+    } catch (err) {
+        console.error('Error starting log consumer job:', err);
+    }
+};
+
 const startSseLogConsumerJob = async () => {
     try {
         await Promise.all([
@@ -20,4 +28,4 @@ const startSseLogConsumerJob = async () => {
     }
 };
 
-module.exports = { startFALogConsumerJob, startSseLogConsumerJob };
+module.exports = { startFALogConsumerJob, startOpsLogConsumerJob, startSseLogConsumerJob };
